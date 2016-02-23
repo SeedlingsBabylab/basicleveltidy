@@ -3681,7 +3681,7 @@ id,tier,object,utterance_type,object_present,speaker,timestamp,basic_level,basic
 10_10_coderSA_audio_checkSM.csv,*NOF,arm,d,n,MOT,25120830_25122330,arm,
 10_10_coderSA_audio_checkSM.csv,*FAN,babies,d,n,MOT,2430010_2434110,baby,
 10_10_coderSA_audio_checkSM.csv,*CXN,back,i,n,MOT,24147480_24148080,back,
-10_10_coderSA_audio_checkSM.csv,*MAN,backpack,q,n,FAT,23241980_23243260,backpack,
+10_10_coderSA_audio_checkSM.csv,*MAN,backpack,q,n,FAT,23241980_23243260,backpack,pack
 10_10_coderSA_audio_checkSM.csv,*OLN,backs,d,n,MOT,3660460_3661260,back,
 10_10_coderSA_audio_checkSM.csv,*CXN,bag,d,n,MOT,22994600_22995930,bag,
 10_10_coderSA_audio_checkSM.csv,*MAN,bag,d,n,FAT,23186260_23189880,bag,

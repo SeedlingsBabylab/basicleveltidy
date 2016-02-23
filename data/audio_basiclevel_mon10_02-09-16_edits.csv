@@ -1,4 +1,4 @@
-id,tier,object,utterance_type,object_present,speaker,timestamp,basic_level,basic_level_edit
+id,tier,object,utterance_type,object_present,speaker,timestamp,basic_level,basic_level_edit,utt_type_edit,obj_present_edit,speaker_edit,
 01_10_coderAR_audio_checkSM.csv,*CXN,A,r,y,TOY,35874340_35875280,A,
 01_10_coderAR_audio_checkSM.csv,*SIL,A,r,y,TOY,35875280_35876080,A,
 01_10_coderAR_audio_checkSM.csv,*TVF,A,r,y,TOY,35876080_35877150,A,

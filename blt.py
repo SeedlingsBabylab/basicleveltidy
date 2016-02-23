@@ -37,7 +37,8 @@ def create_edit_csv():
         header = reader.next()
         with open(bl_edit_file, "wb") as output:
             writer = csv.writer(output)
-            writer.writerow(header+["basic_level_edit"])
+            writer.writerow(header+["basic_level_edit","utt_type_edit",
+                                    "obj_present_edit","speaker_edit"])
             for row in reader:
                 writer.writerow(row + [""])
 
@@ -68,7 +69,6 @@ def find_audio_bl_file_and_edit(key, problems):
         if key in root and "Audio_Analysis" in root:
             with open(os.path.join(root, problems[0][0]), "rU") as input_file:
                 reader = csv.reader(input_file)
-                #reader.next()
                 with open(os.path.join(root, problems[0][0].replace(".csv", "_bltidy.csv")), "wb") as output_file:
                     writer = csv.writer(output_file)
                     for problem in problem_files:

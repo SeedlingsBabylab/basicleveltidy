@@ -10,6 +10,10 @@ bl_edit_file = ""
 
 problem_files = []
 
+tidy_paths = {}
+
+chunks = None
+
 bl_header = ["id", "tier",
              "object",
              "utterance_type",
@@ -47,6 +51,7 @@ def check_row(row):
     if row[8]:
         problem_files.append(row)
 
+
 def fix_bl_edits():
     chunked_problems = chunk_problem_files()
     for key, value in chunked_problems.iteritems():
@@ -61,8 +66,44 @@ def chunk_problem_files():
             chunks[problem[0][0:5]].append(problem)
         else:
             chunks[problem[0][0:5]] = [problem]
-
     return chunks
+
+
+def register_edit_paths():
+    #chunks = chunk_problem_files()
+
+    keys = chunks.keys()
+
+    for key in keys:
+        tidy_paths[key] = [None]*3
+
+    for root, dirs, files in os.walk(subject_files):
+        if any(x in root for x in keys):
+            if "Audio_Analysis" in root:
+                split_root = splitall(root)
+                key = split_root[-3]
+                for file in files:
+                    if "check" in file and file.endswith(".csv"):
+                        tidy_paths[key][0] = os.path.join(root, file)
+            if "Video_Analysis" in root:
+                split_root = splitall(root)
+                key = split_root[-3]
+                for file in files:
+                    if "check" in file and file.endswith(".csv"):
+                        tidy_paths[key][0] = os.path.join(root, file)
+            if "Audio_Annotation" in root:
+                split_root = splitall(root)
+                key = split_root[-3]
+                for file in files:
+                    if "check" in file and file.endswith(".cha"):
+                        tidy_paths[key][1] = os.path.join(root, file)
+            if "Video_Annotation" in root:
+                split_root = splitall(root)
+                key = split_root[-3]
+                for file in files:
+                    if "check" in file and file.endswith(".opf"):
+                        tidy_paths[key][2] = os.path.join(root, file)
+
 
 def find_audio_bl_file_and_edit(key, problems):
     for root, dirs, files in os.walk(subject_files):
@@ -80,6 +121,22 @@ def find_audio_bl_file_and_edit(key, problems):
                                 writer.writerow(row)
 
 
+def splitall(path):
+    allparts = []
+    while 1:
+        parts = os.path.split(path)
+        if parts[0] == path:  # sentinel for absolute paths
+            allparts.insert(0, parts[0])
+            break
+        elif parts[1] == path: # sentinel for relative paths
+            allparts.insert(0, parts[1])
+            break
+        else:
+            path = parts[0]
+            allparts.insert(0, parts[1])
+    return allparts
+
+
 if __name__ == "__main__":
     #bl_file = sys.argv[1]
 
@@ -88,5 +145,11 @@ if __name__ == "__main__":
     #create_edit_csv()
 
     read_csv()
-    fix_bl_edits()
+    chunks = chunk_problem_files()
+    register_edit_paths()
+
+    print tidy_paths
+
+    #fix_bl_edits()
+
     print problem_files

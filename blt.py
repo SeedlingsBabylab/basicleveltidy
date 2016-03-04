@@ -1,6 +1,7 @@
 import csv
 import sys
 import os
+import pprint
 
 #subject_files = "/Volumes/seedlings/Subject_Files"
 subject_files = "data"
@@ -12,7 +13,7 @@ problem_files = []
 
 tidy_paths = {}
 
-chunks = None
+chunks = {}
 
 bl_header = ["id", "tier",
              "object",
@@ -59,8 +60,6 @@ def fix_bl_edits():
 
 
 def chunk_problem_files():
-    chunks = {}
-
     for problem in problem_files:
         if problem[0][0:5] in chunks:
             chunks[problem[0][0:5]].append(problem)
@@ -70,8 +69,6 @@ def chunk_problem_files():
 
 
 def register_edit_paths():
-    #chunks = chunk_problem_files()
-
     keys = chunks.keys()
 
     for key in keys:
@@ -83,19 +80,19 @@ def register_edit_paths():
                 split_root = splitall(root)
                 key = split_root[-3]
                 for file in files:
-                    if "check" in file and file.endswith(".csv"):
+                    if correct_csv_filename(file):
                         tidy_paths[key][0] = os.path.join(root, file)
             if "Video_Analysis" in root:
                 split_root = splitall(root)
                 key = split_root[-3]
                 for file in files:
-                    if "check" in file and file.endswith(".csv"):
+                    if correct_csv_filename(file):
                         tidy_paths[key][0] = os.path.join(root, file)
             if "Audio_Annotation" in root:
                 split_root = splitall(root)
                 key = split_root[-3]
                 for file in files:
-                    if "check" in file and file.endswith(".cha"):
+                    if correct_cha_filename(file):
                         tidy_paths[key][1] = os.path.join(root, file)
             if "Video_Annotation" in root:
                 split_root = splitall(root)
@@ -103,6 +100,31 @@ def register_edit_paths():
                 for file in files:
                     if "check" in file and file.endswith(".opf"):
                         tidy_paths[key][2] = os.path.join(root, file)
+
+
+def correct_cha_filename(file):
+    if file.endswith(".cha"):
+        if "newclan_merged" in file:
+            return True
+        if "final" in file:
+            return True
+    return False
+
+
+def correct_csv_filename(file):
+    if file.endswith(".csv"):
+        if "check" in file and "ready" not in file:
+            return True
+    return False
+
+
+def correct_opf_filename(file):
+    if file.endswith(".opf"):
+        if "final" in file:
+            return True
+        if "consensus" in file:
+            return True
+    return False
 
 
 def find_audio_bl_file_and_edit(key, problems):
@@ -137,6 +159,7 @@ def splitall(path):
     return allparts
 
 
+
 if __name__ == "__main__":
     #bl_file = sys.argv[1]
 
@@ -148,7 +171,7 @@ if __name__ == "__main__":
     chunks = chunk_problem_files()
     register_edit_paths()
 
-    print tidy_paths
+    pprint.pprint(tidy_paths)
 
     #fix_bl_edits()
 

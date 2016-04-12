@@ -109,11 +109,10 @@ def tidy_all_changes():
         # update audio basic_levels
         if chunks[subject][0][0]:
             fix_original_audio_csv(subject)
-            #fix_original_audio_csv(chunks[subject][0][0], chunks[subject])
 
         # update video basic_levels
         if chunks[subject][0][1]:
-            fix_original_video_csv(chunks[subject][0][1], chunks[subject])
+            fix_original_video_csv(subject)
 
 def fix_original_audio_csv(subject):
     path = tidy_paths[subject][0]
@@ -131,7 +130,6 @@ def fix_original_audio_csv(subject):
                         writer.writerow(row)
                     else:
                         writer.writerow(row)
-
 
                 input_file.seek(0)
 
@@ -154,8 +152,11 @@ def fix_original_video_csv(subject):
                 for row in reader:
                     if vid_csv_basiclevel_diff(row, problem):
                         row[6] = problem[8]
+                        writer.writerow(row)
+                    else:
+                        writer.writerow(row)
 
-                    input_file.seek(0)
+                input_file.seek(0)
 
 def vid_csv_basiclevel_diff(row, problem):
     if row[6] == problem[7] and row[5] == problem[6]:

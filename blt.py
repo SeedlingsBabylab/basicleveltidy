@@ -7,6 +7,9 @@ import pprint
 #subject_files = "/Volumes/seedlings/Subject_Files"
 subject_files = "data"
 
+opf_tidy_list = "/Volumes/seedlings/Scripts_and_Apps/opf_tidy_list.txt"
+
+
 bl_file = ""
 bl_edit_file = ""
 
@@ -105,32 +108,59 @@ def tidy_all_changes():
 
         # update audio basic_levels
         if chunks[subject][0][0]:
-            fix_original_audio_csv(chunks[subject][0][0], chunks[subject])
+            fix_original_audio_csv(subject)
+            #fix_original_audio_csv(chunks[subject][0][0], chunks[subject])
 
         # update video basic_levels
         if chunks[subject][0][1]:
             fix_original_video_csv(chunks[subject][0][1], chunks[subject])
 
-def fix_original_audio_csv(path, problems):
-    with open(path, "rU") as file:
-        reader = csv.reader(file)
-        reader.next()
-        writer = csv.writer
-        for problem in problems:
-            for row in reader:
-                if row[6] == problem[7] and row[5] == problem[6]:
-                    row[6] = problem[8]
+def fix_original_audio_csv(subject):
+    path = tidy_paths[subject][0]
+    chunk = chunks[subject]
+    new_path = path.replace(".csv", "_bl_tidy.csv")
+    with open(path, "rU") as input_file:
+        with open(new_path, "wb") as output_file:
+            reader = csv.reader(input_file)
+            reader.next()
+            writer = csv.writer(output_file)
+            for problem in chunk:
+                for row in reader:
+                    if aud_csv_basiclevel_diff(row, problem):
+                        row[6] = problem[8]
+                        writer.writerow(row)
+                    else:
+                        writer.writerow(row)
 
 
-def fix_original_video_csv(path, problems):
-    with open(path, "rU") as file:
-        reader = csv.reader(file)
-        reader.next()
-        writer = csv.writer
-        for problem in problems:
-            for row in reader:
-                if row[6] == problem[7] and row[5] == problem[6]:
-                    row[6] = problem[8]
+                input_file.seek(0)
+
+def aud_csv_basiclevel_diff(row, problem):
+    if row[6] == problem[7] and row[5] == problem[6]:
+        return True
+    return False
+
+
+def fix_original_video_csv(subject):
+    path = tidy_paths[subject][0]
+    chunk = chunks[subject]
+    new_path = path.replace(".csv", "_bl_tidy.csv")
+    with open(path, "rU") as input_file:
+        with open(new_path, "wb") as output_file:
+            reader = csv.reader(input_file)
+            reader.next()
+            writer = csv.writer(output_file)
+            for problem in chunk:
+                for row in reader:
+                    if vid_csv_basiclevel_diff(row, problem):
+                        row[6] = problem[8]
+
+                    input_file.seek(0)
+
+def vid_csv_basiclevel_diff(row, problem):
+    if row[6] == problem[7] and row[5] == problem[6]:
+        return True
+    return False
 
 def correct_cha_filename(file):
     if file.endswith(".cha"):

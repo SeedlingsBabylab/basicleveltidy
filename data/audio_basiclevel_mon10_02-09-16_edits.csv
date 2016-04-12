@@ -144,7 +144,7 @@ id,tier,object,utterance_type,object_present,speaker,timestamp,basic_level,basic
 01_10_coderAR_audio_checkSM.csv,*OLN,bicycle,n,n,MOT,7097600_7098810,bicycle,
 01_10_coderAR_audio_checkSM.csv,*MAN,Big+Red+Riding+Hood,r,y,FAT,35569470_35571910,Big+Red+Riding+Hood,
 01_10_coderAR_audio_checkSM.csv,*MAN,Big+Red+Riding+Hood,q,y,FAT,35577930_35579250,Big+Red+Riding+Hood,
-01_10_coderAR_audio_checkSM.csv,*CXN,bird,n,n,MOT,7125320_7126290,bird,
+01_10_coderAR_audio_checkSM.csv,*CXN,bird,n,n,MOT,7125320_7126290,bird,boiyd
 01_10_coderAR_audio_checkSM.csv,*CXN,bird,n,n,SIS,7129590_7130780,bird,
 01_10_coderAR_audio_checkSM.csv,*FAN,bird,d,y,FAT,8401520_8402650,bird,
 01_10_coderAR_audio_checkSM.csv,*MAN,bird,q,y,MOT,8402650_8403680,bird,
@@ -837,7 +837,7 @@ id,tier,object,utterance_type,object_present,speaker,timestamp,basic_level,basic
 01_10_coderAR_audio_checkSM.csv,*FAN,syrup,d,n,MOT,7852370_7853700,syrup,
 01_10_coderAR_audio_checkSM.csv,*OLF,syrup,d,n,MOT,7860150_7861510,syrup,
 01_10_coderAR_audio_checkSM.csv,*FAN,syrup,s,n,MOT,8317970_8319130,syrup,
-01_10_coderAR_audio_checkSM.csv,*FAF,syrup,s,n,MOT,8321130_8322580,syrup,
+01_10_coderAR_audio_checkSM.csv,*FAF,syrup,s,n,MOT,8321130_8322580,syrup,slizzurp
 01_10_coderAR_audio_checkSM.csv,*MAF,tablespoon,d,n,MOT,25547540_25551460,tablespoon,
 01_10_coderAR_audio_checkSM.csv,*MAN,tablespoon,d,n,FAT,25577930_25580200,tablespoon,
 01_10_coderAR_audio_checkSM.csv,*OLN,tail,s,n,MOT,38360810_38367020,tail,
@@ -876,7 +876,7 @@ id,tier,object,utterance_type,object_present,speaker,timestamp,basic_level,basic
 01_10_coderAR_audio_checkSM.csv,*FAN,tongue,s,y,MOT,38230780_38232080,tongue,
 01_10_coderAR_audio_checkSM.csv,*FAN,tongue,s,y,MOT,38233700_38235990,tongue,
 01_10_coderAR_audio_checkSM.csv,*MAN,tongue,s,y,MOT,38242660_38244380,tongue,
-01_10_coderAR_audio_checkSM.csv,*FAN,tooth,i,y,MOT,38475180_38477060,tooth,
+01_10_coderAR_audio_checkSM.csv,*FAN,tooth,i,y,MOT,38475180_38477060,tooth,toof
 01_10_coderAR_audio_checkSM.csv,*MAN,towel,r,n,FAT,35749700_35752920,towel,
 01_10_coderAR_audio_checkSM.csv,*MAN,towel,d,y,FAT,35757270_35758980,towel,
 01_10_coderAR_audio_checkSM.csv,*MAN,trays,d,n,MOT,33539760_33540780,tray,
@@ -1103,7 +1103,7 @@ id,tier,object,utterance_type,object_present,speaker,timestamp,basic_level,basic
 02_10_coderJH_audio_checkAS.csv,*OLN,milk,q,n,MOT,36449990_36450840,milk,
 02_10_coderJH_audio_checkAS.csv,*MAF,mouth,i,y,MOT,37134590_37135590,mouth,
 02_10_coderJH_audio_checkAS.csv,*OLN,mouth,i,y,MOT,39973130_39978230,mouth,
-02_10_coderJH_audio_checkAS.csv,*MAN,mouth,i,y,MOT,39978230_39979250,mouth,
+02_10_coderJH_audio_checkAS.csv,*MAN,mouth,i,y,MOT,39978230_39979250,mouth,mouff
 02_10_coderJH_audio_checkAS.csv,*FAN,ocean,d,y,MOT,36493100_36494110,ocean,
 02_10_coderJH_audio_checkAS.csv,*MAN,pads,d,n,FAT,42867660_42869160,pad,
 02_10_coderJH_audio_checkAS.csv,*OLN,pajamas,q,n,MOT,32843900_32846760,pajamas,

@@ -13,13 +13,17 @@ opf_tidy_list = "/Volumes/seedlings/Scripts_and_Apps/opf_tidy_list.txt"
 bl_file = ""
 bl_edit_file = ""
 
-problem_files = []
+# id,tier,object,utterance_type,object_present,speaker,timestamp,basic_level,basic_level_edit,utt_type_edit,obj_present_edit,speaker_edit,
+audio_problem_files = []
+# "id","ordinal","onset","offset","object","utterance_type","object_present","speaker","basic_level","basic_level_edit","utt_type_edit","obj_pres_edit","speaker_edit"
+video_problem_files = []
 
 
 # key/value = {"subj_visit": [audio_csv, video_csv, cha, opf]}
 tidy_paths = {}
 
-chunks = {}
+audio_chunks = {}
+video_chunks = {}
 
 bl_header = ["id", "tier",
              "object",
@@ -30,13 +34,20 @@ bl_header = ["id", "tier",
              "basic_level"]
 
 
-def read_csv():
+def read_audio_csv():
     with open(bl_edit_file, "rU") as file:
         reader = csv.reader(file)
         reader.next()
         for row in reader:
-            check_row(row)
+            check_audio_row(row)
 
+
+def read_video_csv():
+    with open(bl_edit_file, "rU") as file:
+        reader = csv.reader(file)
+        reader.next()
+        for row in reader:
+            check_video_row(row)
 
 def create_edit_csv():
     global bl_edit_file
@@ -54,46 +65,74 @@ def create_edit_csv():
                 writer.writerow(row + [""])
 
 
-def check_row(row):
-    if row[8]:
-        problem_files.append(row)
+def check_audio_row(row):
+    if any(x for x in row[8:]):
+        audio_problem_files.append(row)
 
+    # if row[8]:
+    #     audio_problem_files.append(row)
+    # if row[9]:
+    #     audio_problem_files.append(row)
+    # if row[10]:
+    #     audio_problem_files.append(row)
+    # if row[11]:
+    #     audio_problem_files.append(row)
 
-def chunk_problem_files():
-    for problem in problem_files:
-        if problem[0][0:5] in chunks:
-            chunks[problem[0][0:5]].append(problem)
+def check_video_row(row):
+    if any(x for x in row[9:]):
+        video_problem_files.append(row)
+
+def chunk_audio_problem_files():
+    for problem in audio_problem_files:
+        if problem[0][0:5] in audio_chunks:
+            audio_chunks[problem[0][0:5]].append(problem)
         else:
-            chunks[problem[0][0:5]] = [problem]
+            audio_chunks[problem[0][0:5]] = [problem]
     return chunks
+
+
+def chunk_video_problem_files():
+    for problem in audio_problem_files:
+        if problem[0][0:5] in audio_chunks:
+            video_chunks[problem[0][0:5]].append(problem)
+        else:
+            video_chunks[problem[0][0:5]] = [problem]
+    return chunks
+
 
 
 def register_edit_paths():
     keys = chunks.keys()
+    audio_keys = audio_chunks.keys()
+    video_keys = video_chunks.keys()
 
     for key in keys:
         tidy_paths[key] = [None]*4
 
     for root, dirs, files in os.walk(subject_files):
-        if any(x in root for x in keys):
+        if any(x in root for x in audio_keys):
             if "Audio_Analysis" in root:
                 split_root = splitall(root)
                 key = split_root[-3]
                 for file in files:
                     if correct_audio_csv_filename(file):
                         tidy_paths[key][0] = os.path.join(root, file)
-            if "Video_Analysis" in root:
-                split_root = splitall(root)
-                key = split_root[-3]
-                for file in files:
-                    if correct_video_csv_filename(file):
-                        tidy_paths[key][1] = os.path.join(root, file)
+
             if "Audio_Annotation" in root:
                 split_root = splitall(root)
                 key = split_root[-3]
                 for file in files:
                     if correct_cha_filename(file):
                         tidy_paths[key][2] = os.path.join(root, file)
+
+        elif any(x in root for x in video_keys):
+            if "Video_Analysis" in root:
+                split_root = splitall(root)
+                key = split_root[-3]
+                for file in files:
+                    if correct_video_csv_filename(file):
+                        tidy_paths[key][1] = os.path.join(root, file)
+
             if "Video_Annotation" in root:
                 split_root = splitall(root)
                 key = split_root[-3]
@@ -102,21 +141,50 @@ def register_edit_paths():
                         tidy_paths[key][3] = os.path.join(root, file)
 
 
-def tidy_all_changes():
-    for subject in chunks:
+
+
+#         if any(x in root for x in keys):
+            # if "Audio_Analysis" in root:
+                # split_root = splitall(root)
+                # key = split_root[-3]
+                # for file in files:
+                    # if correct_audio_csv_filename(file):
+                        # tidy_paths[key][0] = os.path.join(root, file)
+            # if "Video_Analysis" in root:
+                # split_root = splitall(root)
+                # key = split_root[-3]
+                # for file in files:
+                    # if correct_video_csv_filename(file):
+                        # tidy_paths[key][1] = os.path.join(root, file)
+            # if "Audio_Annotation" in root:
+                # split_root = splitall(root)
+                # key = split_root[-3]
+                # for file in files:
+                    # if correct_cha_filename(file):
+                        # tidy_paths[key][2] = os.path.join(root, file)
+            # if "Video_Annotation" in root:
+                # split_root = splitall(root)
+                # key = split_root[-3]
+                # for file in files:
+                    # if "check" in file and file.endswith(".opf"):
+                        # tidy_paths[key][3] = os.path.join(root, file)
+
+
+def tidy_all_audio_changes():
+    for subject in audio_chunks:
         print "Making changes to {}'s files".format(subject)
 
         # update audio basic_levels
-        if chunks[subject][0][0]:
+        if audio_chunks[subject][0][0]:
             fix_original_audio_csv(subject)
 
         # update video basic_levels
-        if chunks[subject][0][1]:
+        if audio_chunks[subject][0][1]:
             fix_original_video_csv(subject)
 
 def fix_original_audio_csv(subject):
     path = tidy_paths[subject][0]
-    chunk = chunks[subject]
+    chunk = audio_chunks[subject]
     new_path = path.replace(".csv", "_bl_tidy.csv")
     with open(path, "rU") as input_file:
         with open(new_path, "wb") as output_file:
@@ -138,10 +206,16 @@ def aud_csv_basiclevel_diff(row, problem):
         return True
     return False
 
+def aud_csv_utt_diff(row, problem):
+    if row[6] == problem[7] and row[5] == problem[6]:
+        return True
+    return False
+
+
 
 def fix_original_video_csv(subject):
     path = tidy_paths[subject][0]
-    chunk = chunks[subject]
+    chunk = video_chunks[subject]
     new_path = path.replace(".csv", "_bl_tidy.csv")
     with open(path, "rU") as input_file:
         with open(new_path, "wb") as output_file:
@@ -236,8 +310,10 @@ if __name__ == "__main__":
 
     #create_edit_csv()
 
-    read_csv()
-    chunks = chunk_problem_files()
+    if "audio" in bl_edit_file:
+
+        read_audio_csv()
+        chunks = chunk_audio_problem_files()
     register_edit_paths()
 
     # pprint.pprint(tidy_paths)

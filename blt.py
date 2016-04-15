@@ -41,6 +41,7 @@ class FileGroup:
         self.video_csv = vid_csv
         self.video_opf = vid_opf
 
+
 class AudBasicLevel:
     def __init__(self,tier, word, utt_type, present,
                  speaker, time, basic_level):
@@ -64,8 +65,8 @@ class AudBasicLevel:
 
 class AudBasicLevelEdits:
     def __init__(self, id, tier, word, utt_type, present,
-                 speaker, time, basic_level, word_edit,
-                 utt_edit, pres_edit, speak_edit, bl_edit):
+                 speaker, time, basic_level, object_edit,
+                 utt_edit, present_edit, speak_edit, bl_edit):
         self.id = id
         self.tier = tier
         self.word = word
@@ -74,11 +75,30 @@ class AudBasicLevelEdits:
         self.speaker = speaker
         self.time = time
         self.basic_level = basic_level
-        self.word_edit = word_edit
+        self.object_edit = object_edit
         self.bl_edit = bl_edit
         self.utt_edit = utt_edit
-        self.pres_edit = pres_edit
+        self.present_edit = present_edit
         self.speak_edit = speak_edit
+
+        self.needs_full_update = False
+        self.needs_only_bl_update = False
+
+        if self.utt_edit or \
+            self.present_edit or \
+            self.speak_edit or \
+            self.object_edit:
+
+            self.needs_full_update = True
+
+        if self.bl_edit and not \
+                (self.utt_edit or
+                self.present_edit or
+                self.speak_edit or
+                self.object_edit):
+            self.needs_only_bl_update = True
+
+
 
     def csv_row(self):
         return [self.id,
@@ -135,6 +155,21 @@ class VidBasicLevelEdits:
         self.speak_edit = speak_edit
         self.bl_edit = bl_edit
 
+        self.needs_full_update = False
+        self.needs_only_bl_update = False
+
+        if self.utt_edit or \
+                self.present_edit or \
+                self.speak_edit or \
+                self.object_edit:
+            self.needs_full_update = True
+
+        if self.bl_edit and not \
+                (self.utt_edit or
+                     self.present_edit or
+                     self.speak_edit or
+                     self.object_edit):
+            self.needs_only_bl_update = True
 
     def csv_row(self):
         return [self.id,
@@ -260,39 +295,35 @@ def register_edit_paths():
 
 
 def tidy_all_audio_changes():
-    for subject in audio_diffs:
+    for subject, diffs in audio_diffs.iteritems():
         print "Making changes to {}'s files".format(subject)
 
-        # update audio basic_levels
-        if audio_diffs[subject][0][0]:
-            fix_original_audio_csv(subject)
+        if any(x.needs_full_update for x in diffs):
+            fix_original_audio_csv(subject, diffs)
+            update_cha(subject, diffs)
+        else:
+            fix_original_audio_csv(subject, diffs)
 
-        # update video basic_levels
-        if audio_diffs[subject][0][1]:
-            fix_original_video_csv(subject)
 
 def tidy_all_video_changes():
-    for subject in video_diffs:
+    for subject, diffs in video_diffs.iteritems():
         print "Making changes to {}'s files".format(subject)
 
-        # update audio basic_levels
-        if audio_diffs[subject][0][0]:
-            fix_original_audio_csv(subject)
+        if any(x.needs_full_update for x in diffs):
+            fix_original_video_csv(subject, diffs)
+            update_opf(subject, diffs)
+        elif diffs.needs_only_bl_update:
+            fix_original_video_csv(subject, diffs)
 
-        # update video basic_levels
-        if audio_diffs[subject][0][1]:
-            fix_original_video_csv(subject)
-
-def fix_original_audio_csv(subject):
-    path = tidy_paths[subject][0]
-    chunk = audio_diffs[subject]
+def fix_original_audio_csv(subject, diffs):
+    path = tidy_paths[subject].audio_csv
     new_path = path.replace(".csv", "_bl_tidy.csv")
     with open(path, "rU") as input_file:
         with open(new_path, "wb") as output_file:
             reader = csv.reader(input_file)
             reader.next()
             writer = csv.writer(output_file)
-            for problem in chunk:
+            for problem in diffs:
                 for row in reader:
                     if aud_csv_basiclevel_diff(row, problem):
                         row[6] = problem[8]
@@ -303,6 +334,9 @@ def fix_original_audio_csv(subject):
                         writer.writerow(row)
 
                 input_file.seek(0)
+
+def update_cha(subject, diffs):
+    print "hello"
 
 def aud_csv_basiclevel_diff(row, problem):
     if row[6] == problem[7] and row[5] == problem[6]:
@@ -316,16 +350,16 @@ def aud_csv_utt_diff(row, problem):
     return False
 
 
-def fix_original_video_csv(subject):
+def fix_original_video_csv(subject, diffs):
     path = tidy_paths[subject][0]
-    chunk = video_diffs[subject]
+    #chunk = video_diffs[subject]
     new_path = path.replace(".csv", "_bl_tidy.csv")
     with open(path, "rU") as input_file:
         with open(new_path, "wb") as output_file:
             reader = csv.reader(input_file)
             reader.next()
             writer = csv.writer(output_file)
-            for problem in chunk:
+            for problem in diffs:
                 for row in reader:
                     if vid_csv_basiclevel_diff(row, problem):
                         row[6] = problem[8]
@@ -359,7 +393,8 @@ def correct_audio_csv_filename(file):
 
 def correct_video_csv_filename(file):
     if file.endswith(".csv"):
-        if ("check" in file) and ("ready" not in file) and ("video" in file):
+        if ("check" in file) and ("ready" not in file) \
+                and ("video" in file) and ("bltidy" not in file):
             return True
     return False
 
@@ -419,11 +454,10 @@ if __name__ == "__main__":
         read_audio_csv()
         chunks = chunk_audio_problem_files()
         register_edit_paths()
-
-    # pprint.pprint(tidy_paths)
-
-    #fix_bl_edits()
-
-    # print problem_files
-
         tidy_all_audio_changes()
+
+    if "video" in bl_edit_file:
+        read_audio_csv()
+        chunks = chunk_video_problem_files()
+        register_edit_paths()
+        tidy_all_video_changes()

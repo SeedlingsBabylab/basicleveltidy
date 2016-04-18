@@ -3,6 +3,7 @@ import sys
 import os
 import pprint
 
+from collections import deque
 
 #subject_files = "/Volumes/seedlings/Subject_Files"
 subject_files = "data"
@@ -243,7 +244,6 @@ def chunk_audio_problem_files():
             audio_diffs[problem.id[0:5]] = [problem]
     return audio_diffs
 
-
 def chunk_video_problem_files():
     for problem in audio_problem_files:
         if problem[0][0:5] in audio_diffs:
@@ -251,8 +251,6 @@ def chunk_video_problem_files():
         else:
             video_diffs[problem[0][0:5]] = [problem]
     return video_diffs
-
-
 
 def register_edit_paths():
     keys = chunks.keys()
@@ -268,14 +266,14 @@ def register_edit_paths():
                 split_root = splitall(root)
                 key = split_root[-3]
                 for file in files:
-                    if correct_audio_csv_filename(file):
+                    if correct_audio_csv_filename(key, file):
                         tidy_paths[key].audio_csv = os.path.join(root, file)
 
             if "Audio_Annotation" in root:
                 split_root = splitall(root)
                 key = split_root[-3]
                 for file in files:
-                    if correct_cha_filename(file):
+                    if correct_cha_filename(key, file):
                         tidy_paths[key].audio_cha = os.path.join(root, file)
 
         elif any(x in root for x in video_keys):
@@ -283,7 +281,7 @@ def register_edit_paths():
                 split_root = splitall(root)
                 key = split_root[-3]
                 for file in files:
-                    if correct_video_csv_filename(file):
+                    if correct_video_csv_filename(key, file):
                         tidy_paths[key].video_csv = os.path.join(root, file)
 
             if "Video_Annotation" in root:
@@ -311,35 +309,75 @@ def tidy_all_video_changes():
 
         if any(x.needs_full_update for x in diffs):
             fix_original_video_csv(subject, diffs)
-            update_opf(subject, diffs)
+            #update_opf(subject, diffs)
         elif diffs.needs_only_bl_update:
             fix_original_video_csv(subject, diffs)
 
 def fix_original_audio_csv(subject, diffs):
     path = tidy_paths[subject].audio_csv
     new_path = path.replace(".csv", "_bl_tidy.csv")
-    with open(path, "rU") as input_file:
-        with open(new_path, "wb") as output_file:
-            reader = csv.reader(input_file)
-            reader.next()
-            writer = csv.writer(output_file)
-            for problem in diffs:
-                for row in reader:
-                    if aud_csv_basiclevel_diff(row, problem):
-                        row[6] = problem[8]
-                        writer.writerow(row)
-                    elif aud_csv_utt_diff(row, problem):
-                        row[3] = problem[9]
-                    else:
-                        writer.writerow(row)
+    basic_levels = audio_csv_to_objects(path)
 
-                input_file.seek(0)
+    diff_deque = deque(diffs)
+    edits = []
+    current_diff = diff_deque.popleft()
+
+    for basic_level in basic_levels:
+        if check_diff_and_bl_match(current_diff, basic_level):
+            edit = diff_basic_level_edits(basic_level, current_diff)
+            if diff_deque:
+                current_diff = diff_deque.pop()
+            else:
+                edits.append(basic_level)
+                continue
+            edits.append(edit)
+        edits.append(basic_level)
+
+    with open(new_path, "wb") as output:
+        writer = csv.writer(output)
+        for edit in edits:
+            writer.writerow(edit.csv_row())
+
+
+def check_diff_and_bl_match(diff, basic_level):
+    if diff.time == basic_level.time and\
+        diff.word == basic_level.word and\
+        diff.speaker == basic_level.speaker and\
+        diff.utt_type == basic_level.utt_type and\
+        diff.present == basic_level.present:
+        return True
+    return False
+
+def diff_basic_level_edits(basic_level, edit):
+
+    if edit.utt_edit:
+        basic_level.utt_type = edit.utt_edit
+    if edit.present_edit:
+        basic_level.present = edit.present_edit
+    if edit.speak_edit:
+        basic_level.speaker = edit.speak_edit
+    if edit.bl_edit:
+        basic_level.basic_level = edit.bl_edit
+
+    return basic_level
+
+
+def audio_csv_to_objects(path):
+    with open(path, "rU") as input:
+        elements = []
+        reader = csv.reader(input)
+        for row in reader:
+            element = AudBasicLevel(row[0], row[1], row[2],
+                                    row[3], row[4], row[5], row[6])
+            elements.append(element)
+    return elements
 
 def update_cha(subject, diffs):
     print "hello"
 
 def aud_csv_basiclevel_diff(row, problem):
-    if row[6] == problem[7] and row[5] == problem[6]:
+    if problem.bl_edit and (problem.time == row[5])\
+        and (problem.word == row[1]):
         return True
     return False
 
@@ -374,27 +412,29 @@ def vid_csv_basiclevel_diff(row, problem):
         return True
     return False
 
-def correct_cha_filename(file):
+def correct_cha_filename(key, file):
     if file.endswith(".cha"):
-        if "newclan_merged" in file:
+        if "newclan_merged" in file and key in file:
             return True
-        if "final" in file:
+        if "final" in file and key in file:
             return True
     return False
 
 
-def correct_audio_csv_filename(file):
+def correct_audio_csv_filename(key, file):
     if file.endswith(".csv"):
         if ("check" in file) and ("ready" not in file)\
-                and ("audio" in file) and ("bltidy" not in file):
+                and ("audio" in file) and ("bltidy" not in file)\
+                and (key in file):
             return True
     return False
 
 
-def correct_video_csv_filename(file):
+def correct_video_csv_filename(key, file):
     if file.endswith(".csv"):
         if ("check" in file) and ("ready" not in file) \
-                and ("video" in file) and ("bltidy" not in file):
+                and ("video" in file) and ("bltidy" not in file)\
+                and (key in file):
             return True
     return False
 

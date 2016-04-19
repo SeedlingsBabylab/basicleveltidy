@@ -212,21 +212,6 @@ def read_video_csv():
         for row in reader:
             check_video_row(row)
 
-def create_edit_csv():
-    global bl_edit_file
-    bl_edit_file = bl_file.replace(".csv", "_edits.csv")
-    print bl_file
-    print bl_edit_file
-    with open(bl_file, "rU") as input:
-        reader = csv.reader(input)
-        header = reader.next()
-        with open(bl_edit_file, "wb") as output:
-            writer = csv.writer(output)
-            writer.writerow(header+["object_level_edit","utt_type_edit",
-                                    "obj_present_edit","speaker_edit", "basic_level_edit"])
-            for row in reader:
-                writer.writerow(row + [""])
-
 def check_audio_row(row):
     if any(x for x in row[8:]):
         edit = AudBasicLevelEdits(*row)
@@ -384,7 +369,7 @@ def update_cha(subject, diffs):
     entry_regx = re.compile(re1+re2+re3+re4+re5+re6+re7+re8,re.IGNORECASE|re.DOTALL)
 
     diff_queue = deque(diffs)
-    current_diff = deque.popleft()
+    current_diff = diff_queue.popleft()
 
     last_line = ""
     multi_line = ""
@@ -417,6 +402,11 @@ def update_cha(subject, diffs):
 
                     # set the new curr_interval
                     interval_str = regx_result.group().replace("\025", "")
+                    if interval_str != current_diff.time:
+                        output.write(line)
+                        last_line = line
+                        multi_line = ""
+                        continue
                     interval = interval_str.split("_")
                     curr_interval[0] = int(interval[0])
                     curr_interval[1] = int(interval[1])
@@ -428,6 +418,7 @@ def update_cha(subject, diffs):
 
                     if not regx_result:
                         multi_line += line
+                        continue
 
                     prev_interval[0] = curr_interval[0]
                     prev_interval[1] = curr_interval[1]
@@ -548,11 +539,7 @@ def splitall(path):
 
 
 if __name__ == "__main__":
-    #bl_file = sys.argv[1]
-
     bl_edit_file = sys.argv[1]
-
-    #create_edit_csv()
 
     if "audio" in bl_edit_file:
 

@@ -7,7 +7,7 @@ id,tier,object,utterance_type,object_present,speaker,timestamp,basic_level,objec
 01_10_coderAR_audio_checkSM.csv,*OLN,A,r,y,TOY,35884600_35887380,A,
 01_10_coderAR_audio_checkSM.csv,*OLN,A,r,y,TOY,35884600_35887380,A,
 01_10_coderAR_audio_checkSM.csv,*TVN,A,r,y,TOY,36049260_36053460,A,
-01_10_coderAR_audio_checkSM.csv,*MAN,alligator,r,y,TOY,35883600_35884600,alligator,
+01_10_coderAR_audio_checkSM.csv,*MAN,alligator,r,y,TOY,35883600_35884600,alligator,gator
 01_10_coderAR_audio_checkSM.csv,*OLF,alligator,n,y,TOY,35890070_35891040,alligator,
 01_10_coderAR_audio_checkSM.csv,*OLN,alligator,n,y,TOY,35893970_35894800,alligator,
 01_10_coderAR_audio_checkSM.csv,*TVF,alligator,n,y,TOY,35895800_35896830,alligator,

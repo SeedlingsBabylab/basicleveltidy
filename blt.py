@@ -35,6 +35,8 @@ bl_header = ["id", "tier",
              "timestamp",
              "basic_level"]
 
+opf_update_diffs = []
+
 # correct regex for annotations
 re1 = '((?:[a-z][a-z0-9_+]*))'  # the word
 re2 = '(\\s+)'  # whitespace
@@ -118,7 +120,12 @@ class AudBasicLevelEdits:
                 self.present,
                 self.speaker,
                 self.time,
-                self.basic_level]
+                self.basic_level,
+                self.object_edit,
+                self.utt_edit,
+                self.present_edit,
+                self.speak_edit,
+                self.bl_edit]
 
 class VidBasicLevel:
     def __init__(self, ordinal, onset, offset, word,
@@ -183,7 +190,7 @@ class VidBasicLevelEdits:
                 self.ordinal,
                 self.onset,
                 self.offset,
-                self.object,
+                self.word,
                 self.utt_type,
                 self.present,
                 self.speaker,
@@ -290,14 +297,17 @@ def tidy_all_audio_changes():
             fix_original_audio_csv(subject, diffs)
 
 def tidy_all_video_changes():
+    global opf_update_diffs
     for subject, diffs in video_diffs.iteritems():
         print "Making changes to {}'s files".format(subject)
 
         if any(x.needs_full_update for x in diffs):
             fix_original_video_csv(subject, diffs)
-            #update_opf(subject, diffs)
+            opf_update_diffs += diffs
         elif diffs.needs_only_bl_update:
             fix_original_video_csv(subject, diffs)
+    if opf_update_diffs:
+        output_opf_diffs_file(opf_update_diffs)
 
 def fix_original_audio_csv(subject, diffs):
     path = tidy_paths[subject].audio_csv
@@ -522,6 +532,21 @@ def splitall(path):
             allparts.insert(0, parts[1])
     return allparts
 
+def output_opf_diffs_file(diffs):
+
+    with open("opf_diffs.csv", "wb") as output:
+        writer = csv.writer(output)
+        for diff in diffs:
+            if diff.needs_full_update:
+                writer.writerow(diff.csv_row())
+
+    print "\n================================================"
+    print "#                                              #"
+    print "#  A file: \"opf_diffs.csv   has been created.  #\n" \
+          "#  This file needs to be passed through a      #\n" \
+          "#  datavyu script to update the opf files.     #"
+    print "#                                              #"
+    print "================================================"
 
 if __name__ == "__main__":
     bl_edit_file = sys.argv[1]

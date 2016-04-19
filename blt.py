@@ -46,9 +46,6 @@ re7 = '(_+)'  # _
 re8 = '((?:[a-z][a-z0-9]*))'  # speaker
 
 
-
-
-
 class FileGroup:
     def __init__(self, aud_csv, aud_cha, vid_csv, vid_opf):
         self.audio_csv = aud_csv
@@ -124,12 +121,12 @@ class AudBasicLevelEdits:
                 self.basic_level]
 
 class VidBasicLevel:
-    def __init__(self, ordinal, onset, offset, object,
+    def __init__(self, ordinal, onset, offset, word,
                  utt_type, present, speaker, basic_level):
         self.ordinal = ordinal
         self.onset = onset
         self.offset = offset
-        self.object = object
+        self.word = word
         self.utt_type = utt_type
         self.present = present
         self.speaker = speaker
@@ -139,14 +136,14 @@ class VidBasicLevel:
         return [self.ordinal,
                 self.onset,
                 self.offset,
-                self.object,
+                self.word,
                 self.utt_type,
                 self.present,
                 self.speaker,
                 self.basic_level]
 
 class VidBasicLevelEdits:
-    def __init__(self, id, ordinal, onset, offset, object,
+    def __init__(self, id, ordinal, onset, offset, word,
                  utt_type, present, speaker, basic_level,
                  object_edit, utt_edit, present_edit, speak_edit,
                  bl_edit):
@@ -154,7 +151,7 @@ class VidBasicLevelEdits:
         self.ordinal = ordinal
         self.onset = onset
         self.offset = offset
-        self.object = object
+        self.word = word
         self.utt_type = utt_type
         self.present = present
         self.speaker = speaker
@@ -312,7 +309,7 @@ def fix_original_audio_csv(subject, diffs):
     current_diff = diff_deque.popleft()
 
     for basic_level in basic_levels:
-        if check_diff_and_bl_match(current_diff, basic_level):
+        if aud_check_diff_and_bl_match(current_diff, basic_level):
             edit = diff_basic_level_edits(basic_level, current_diff)
             if diff_deque:
                 current_diff = diff_deque.popleft()
@@ -328,8 +325,44 @@ def fix_original_audio_csv(subject, diffs):
         for edit in edits:
             writer.writerow(edit.csv_row())
 
-def check_diff_and_bl_match(diff, basic_level):
+def fix_original_video_csv(subject, diffs):
+    path = tidy_paths[subject].video_csv
+    new_path = path.replace(".csv", "_bl_tidy.csv")
+    basic_levels = video_csv_to_objects(path)
+
+    diff_deque = deque(diffs)
+    edits = []
+    current_diff = diff_deque.popleft()
+
+    for basic_level in basic_levels:
+        if vid_check_diff_and_bl_match(current_diff, basic_level):
+            edit = diff_basic_level_edits(basic_level, current_diff)
+            if diff_deque:
+                current_diff = diff_deque.popleft()
+            else:
+                edits.append(basic_level)
+                continue
+            edits.append(edit)
+            continue
+        edits.append(basic_level)
+
+    with open(new_path, "wb") as output:
+        writer = csv.writer(output)
+        for edit in edits:
+            writer.writerow(edit.csv_row())
+
+def aud_check_diff_and_bl_match(diff, basic_level):
     if diff.time == basic_level.time and\
+        diff.word == basic_level.word and\
+        diff.speaker == basic_level.speaker and\
+        diff.utt_type == basic_level.utt_type and\
+        diff.present == basic_level.present:
+        return True
+    return False
+
+def vid_check_diff_and_bl_match(diff, basic_level):
+    if diff.onset == basic_level.onset and\
+        diff.offset == basic_level.offset and\
         diff.word == basic_level.word and\
         diff.speaker == basic_level.speaker and\
         diff.utt_type == basic_level.utt_type and\
@@ -357,6 +390,17 @@ def audio_csv_to_objects(path):
         for row in reader:
             element = AudBasicLevel(row[0], row[1], row[2],
                                     row[3], row[4], row[5], row[6])
+            elements.append(element)
+    return elements
+
+def video_csv_to_objects(path):
+    with open(path, "rU") as input:
+        elements = []
+        reader = csv.reader(input)
+        for row in reader:
+            element = VidBasicLevel(row[0], row[1], row[2],
+                                    row[3], row[4], row[5],
+                                    row[6], row[7])
             elements.append(element)
     return elements
 
@@ -431,43 +475,6 @@ def update_cha(subject, diffs):
 
                     entries = entry_regx.findall(multi_line + line)
 
-def aud_csv_basiclevel_diff(row, problem):
-    if problem.bl_edit and (problem.time == row[5])\
-        and (problem.word == row[1]):
-        return True
-    return False
-
-def aud_csv_utt_diff(row, problem):
-    if row[2] == problem[3] and row[5] == problem[6]\
-            and row[1] == problem[2]:
-        return True
-    return False
-
-
-def fix_original_video_csv(subject, diffs):
-    path = tidy_paths[subject][0]
-    #chunk = video_diffs[subject]
-    new_path = path.replace(".csv", "_bl_tidy.csv")
-    with open(path, "rU") as input_file:
-        with open(new_path, "wb") as output_file:
-            reader = csv.reader(input_file)
-            reader.next()
-            writer = csv.writer(output_file)
-            for problem in diffs:
-                for row in reader:
-                    if vid_csv_basiclevel_diff(row, problem):
-                        row[6] = problem[8]
-                        writer.writerow(row)
-                    else:
-                        writer.writerow(row)
-
-                input_file.seek(0)
-
-def vid_csv_basiclevel_diff(row, problem):
-    if row[6] == problem[7] and row[5] == problem[6]:
-        return True
-    return False
-
 def correct_cha_filename(key, file):
     if file.endswith(".cha"):
         if "newclan_merged" in file and key in file:
@@ -475,7 +482,6 @@ def correct_cha_filename(key, file):
         if "final" in file and key in file:
             return True
     return False
-
 
 def correct_audio_csv_filename(key, file):
     if file.endswith(".csv"):
@@ -485,7 +491,6 @@ def correct_audio_csv_filename(key, file):
             return True
     return False
 
-
 def correct_video_csv_filename(key, file):
     if file.endswith(".csv"):
         if ("check" in file) and ("ready" not in file) \
@@ -494,7 +499,6 @@ def correct_video_csv_filename(key, file):
             return True
     return False
 
-
 def correct_opf_filename(file):
     if file.endswith(".opf"):
         if "final" in file:
@@ -502,24 +506,6 @@ def correct_opf_filename(file):
         if "consensus" in file:
             return True
     return False
-
-
-def find_audio_bl_file_and_edit(key, problems):
-    for root, dirs, files in os.walk(subject_files):
-        if key in root and "Audio_Analysis" in root:
-            with open(os.path.join(root, problems[0][0]), "rU") as input_file:
-                reader = csv.reader(input_file)
-                with open(os.path.join(root, problems[0][0].replace(".csv", "_bltidy.csv")), "wb") as output_file:
-                    writer = csv.writer(output_file)
-                    for problem in problem_files:
-                        for row in reader:
-                            if row[6] == problem[7] and row[5] == problem[6]:
-                                row[6] = problem[8]
-                                writer.writerow(row)
-                            else:
-                                writer.writerow(row)
-
-
 
 def splitall(path):
     allparts = []
@@ -535,7 +521,6 @@ def splitall(path):
             path = parts[0]
             allparts.insert(0, parts[1])
     return allparts
-
 
 
 if __name__ == "__main__":

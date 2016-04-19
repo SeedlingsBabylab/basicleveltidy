@@ -542,7 +542,7 @@ def output_opf_diffs_file(diffs):
 
     print "\n================================================"
     print "#                                              #"
-    print "#  A file: \"opf_diffs.csv   has been created.  #\n" \
+    print "#  A file: \"opf_diffs.csv\" has been created. #\n" \
           "#  This file needs to be passed through a      #\n" \
           "#  datavyu script to update the opf files.     #"
     print "#                                              #"

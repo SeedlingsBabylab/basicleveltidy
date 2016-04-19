@@ -326,11 +326,12 @@ def fix_original_audio_csv(subject, diffs):
         if check_diff_and_bl_match(current_diff, basic_level):
             edit = diff_basic_level_edits(basic_level, current_diff)
             if diff_deque:
-                current_diff = diff_deque.pop()
+                current_diff = diff_deque.popleft()
             else:
                 edits.append(basic_level)
                 continue
             edits.append(edit)
+            continue
         edits.append(basic_level)
 
     with open(new_path, "wb") as output:
@@ -424,7 +425,7 @@ def correct_cha_filename(key, file):
 def correct_audio_csv_filename(key, file):
     if file.endswith(".csv"):
         if ("check" in file) and ("ready" not in file)\
-                and ("audio" in file) and ("bltidy" not in file)\
+                and ("audio" in file) and ("bl_tidy" not in file)\
                 and (key in file):
             return True
     return False
@@ -433,7 +434,7 @@ def correct_audio_csv_filename(key, file):
 def correct_video_csv_filename(key, file):
     if file.endswith(".csv"):
         if ("check" in file) and ("ready" not in file) \
-                and ("video" in file) and ("bltidy" not in file)\
+                and ("video" in file) and ("bl_tidy" not in file)\
                 and (key in file):
             return True
     return False

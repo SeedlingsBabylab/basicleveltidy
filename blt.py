@@ -1,6 +1,7 @@
 import csv
 import sys
 import os
+import re
 import pprint
 
 from collections import deque
@@ -34,6 +35,19 @@ bl_header = ["id", "tier",
              "timestamp",
              "basic_level"]
 
+# correct regex for annotations
+re1 = '((?:[a-z][a-z0-9_+]*))'  # the word
+re2 = '(\\s+)'  # whitespace
+re3 = '(&=)'  # &=
+re4 = '(.)'  # utterance_type
+re5 = '(_+)'  # _
+re6 = '(.)'  # object_present
+re7 = '(_+)'  # _
+re8 = '((?:[a-z][a-z0-9]*))'  # speaker
+
+
+
+
 
 class FileGroup:
     def __init__(self, aud_csv, aud_cha, vid_csv, vid_opf):
@@ -41,7 +55,6 @@ class FileGroup:
         self.audio_cha = aud_cha
         self.video_csv = vid_csv
         self.video_opf = vid_opf
-
 
 class AudBasicLevel:
     def __init__(self,tier, word, utt_type, present,
@@ -62,7 +75,6 @@ class AudBasicLevel:
                 self.speaker,
                 self.time,
                 self.basic_level]
-
 
 class AudBasicLevelEdits:
     def __init__(self, id, tier, word, utt_type, present,
@@ -111,8 +123,6 @@ class AudBasicLevelEdits:
                 self.time,
                 self.basic_level]
 
-
-
 class VidBasicLevel:
     def __init__(self, ordinal, onset, offset, object,
                  utt_type, present, speaker, basic_level):
@@ -134,7 +144,6 @@ class VidBasicLevel:
                 self.present,
                 self.speaker,
                 self.basic_level]
-
 
 class VidBasicLevelEdits:
     def __init__(self, id, ordinal, onset, offset, object,
@@ -188,7 +197,6 @@ class VidBasicLevelEdits:
                 self.speak_edit,
                 self.bl_edit]
 
-
 def read_audio_csv():
     with open(bl_edit_file, "rU") as file:
         reader = csv.reader(file)
@@ -196,7 +204,6 @@ def read_audio_csv():
         for row in reader:
 
             check_audio_row(row)
-
 
 def read_video_csv():
     with open(bl_edit_file, "rU") as file:
@@ -219,7 +226,6 @@ def create_edit_csv():
                                     "obj_present_edit","speaker_edit", "basic_level_edit"])
             for row in reader:
                 writer.writerow(row + [""])
-
 
 def check_audio_row(row):
     if any(x for x in row[8:]):
@@ -291,7 +297,6 @@ def register_edit_paths():
                     if "check" in file and file.endswith(".opf"):
                         tidy_paths[key].video_opf = os.path.join(root, file)
 
-
 def tidy_all_audio_changes():
     for subject, diffs in audio_diffs.iteritems():
         print "Making changes to {}'s files".format(subject)
@@ -301,7 +306,6 @@ def tidy_all_audio_changes():
             update_cha(subject, diffs)
         else:
             fix_original_audio_csv(subject, diffs)
-
 
 def tidy_all_video_changes():
     for subject, diffs in video_diffs.iteritems():
@@ -339,7 +343,6 @@ def fix_original_audio_csv(subject, diffs):
         for edit in edits:
             writer.writerow(edit.csv_row())
 
-
 def check_diff_and_bl_match(diff, basic_level):
     if diff.time == basic_level.time and\
         diff.word == basic_level.word and\
@@ -362,7 +365,6 @@ def diff_basic_level_edits(basic_level, edit):
 
     return basic_level
 
-
 def audio_csv_to_objects(path):
     with open(path, "rU") as input:
         elements = []
@@ -374,7 +376,69 @@ def audio_csv_to_objects(path):
     return elements
 
 def update_cha(subject, diffs):
-    print "hello"
+    path = tidy_paths[subject].audio_cha
+    new_path = path.replace(".cha", "_bl_tidy.cha")
+
+    interval_regx = re.compile("(\025\d+_\d+)")
+
+    entry_regx = re.compile(re1+re2+re3+re4+re5+re6+re7+re8,re.IGNORECASE|re.DOTALL)
+
+    diff_queue = deque(diffs)
+    current_diff = deque.popleft()
+
+    last_line = ""
+    multi_line = ""
+
+    prev_interval = [0, 0]
+    curr_interval = [0, 0]
+
+    with open(path, "rU") as input:
+        with open(new_path, "wb") as output:
+            for index, line in enumerate(input):
+                if line.startswith("@") or index < 15:
+                    output.write(line)
+                    last_line = line
+                    multi_line += line
+
+                if line.startswith("%"):
+                    output.write(line)
+                    last_line = line
+                    multi_line = ""
+
+                if line.startswith("*"):
+                    regx_result = interval_regx.search(line)
+
+                    if not regx_result:
+                        multi_line += line
+                        continue
+
+                    prev_interval[0] = curr_interval[0]
+                    prev_interval[1] = curr_interval[1]
+
+                    # set the new curr_interval
+                    interval_str = regx_result.group().replace("\025", "")
+                    interval = interval_str.split("_")
+                    curr_interval[0] = int(interval[0])
+                    curr_interval[1] = int(interval[1])
+
+                    entries = entry_regx.findall(multi_line + line)
+
+                if line.startswith("\t"):
+                    regx_result = interval_regx.search(line)
+
+                    if not regx_result:
+                        multi_line += line
+
+                    prev_interval[0] = curr_interval[0]
+                    prev_interval[1] = curr_interval[1]
+
+                    # set the new curr_interval
+                    interval_str = regx_result.group().replace("\025", "")
+                    interval = interval_str.split("_")
+                    curr_interval[0] = int(interval[0])
+                    curr_interval[1] = int(interval[1])
+
+                    entries = entry_regx.findall(multi_line + line)
 
 def aud_csv_basiclevel_diff(row, problem):
     if problem.bl_edit and (problem.time == row[5])\

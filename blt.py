@@ -528,9 +528,6 @@ def check_diff_and_cha_regx(diff, cha_regx):
         return True
     return False
 
-def diff_to_cha_entry(diff):
-
-
 def correct_cha_filename(key, file):
     if file.endswith(".cha"):
         if "newclan_merged" in file and key in file\

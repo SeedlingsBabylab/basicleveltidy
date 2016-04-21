@@ -77,7 +77,7 @@ class AudBasicLevel:
 
 class AudBasicLevelEdits:
     def __init__(self, id, tier, word, utt_type, present,
-                 speaker, time, basic_level, object_edit,
+                 speaker, time, basic_level, word_edit,
                  utt_edit, present_edit, speak_edit, bl_edit):
         self.id = id
         self.tier = tier
@@ -87,7 +87,7 @@ class AudBasicLevelEdits:
         self.speaker = speaker
         self.time = time
         self.basic_level = basic_level
-        self.object_edit = object_edit
+        self.word_edit = word_edit
         self.bl_edit = bl_edit
         self.utt_edit = utt_edit
         self.present_edit = present_edit
@@ -99,7 +99,7 @@ class AudBasicLevelEdits:
         if self.utt_edit or \
             self.present_edit or \
             self.speak_edit or \
-            self.object_edit:
+            self.word_edit:
 
             self.needs_full_update = True
 
@@ -107,7 +107,7 @@ class AudBasicLevelEdits:
                 (self.utt_edit or
                 self.present_edit or
                 self.speak_edit or
-                self.object_edit):
+                self.word_edit):
             self.needs_only_bl_update = True
 
 
@@ -121,11 +121,38 @@ class AudBasicLevelEdits:
                 self.speaker,
                 self.time,
                 self.basic_level,
-                self.object_edit,
+                self.word_edit,
                 self.utt_edit,
                 self.present_edit,
                 self.speak_edit,
                 self.bl_edit]
+
+    def new_cha_entry(self):
+        if self.word_edit:
+            word = self.word_edit
+        else:
+            word = self.word
+        if self.utt_edit:
+            utt = self.utt_edit
+        else:
+            utt = self.utt_type
+        if self.present_edit:
+            present = self.present_edit
+        else:
+            present = self.present
+        if self.speak_edit:
+            speaker = self.speak_edit
+        else:
+            speaker = self.speaker
+
+        entry = "{} &={}_{}_{}".format(word, utt, present, speaker)
+        return entry
+
+    def old_cha_entry(self):
+        return "{} &={}_{}_{}".format(self.word,
+                                      self.utt_type,
+                                      self.present,
+                                      self.speaker)
 
 class VidBasicLevel:
     def __init__(self, ordinal, onset, offset, word,
@@ -152,7 +179,7 @@ class VidBasicLevel:
 class VidBasicLevelEdits:
     def __init__(self, id, ordinal, onset, offset, word,
                  utt_type, present, speaker, basic_level,
-                 object_edit, utt_edit, present_edit, speak_edit,
+                 word_edit, utt_edit, present_edit, speak_edit,
                  bl_edit):
         self.id = id
         self.ordinal = ordinal
@@ -163,7 +190,7 @@ class VidBasicLevelEdits:
         self.present = present
         self.speaker = speaker
         self.basic_level = basic_level
-        self.object_edit = object_edit
+        self.word_edit = word_edit
         self.utt_edit = utt_edit
         self.present_edit = present_edit
         self.speak_edit = speak_edit
@@ -175,14 +202,14 @@ class VidBasicLevelEdits:
         if self.utt_edit or \
                 self.present_edit or \
                 self.speak_edit or \
-                self.object_edit:
+                self.word_edit:
             self.needs_full_update = True
 
         if self.bl_edit and not \
                 (self.utt_edit or
                      self.present_edit or
                      self.speak_edit or
-                     self.object_edit):
+                     self.word_edit):
             self.needs_only_bl_update = True
 
     def csv_row(self):
@@ -195,7 +222,7 @@ class VidBasicLevelEdits:
                 self.present,
                 self.speaker,
                 self.basic_level,
-                self.object_edit,
+                self.word_edit,
                 self.utt_edit,
                 self.present_edit,
                 self.speak_edit,
@@ -437,18 +464,22 @@ def update_cha(subject, diffs):
                 if line.startswith("@") or index < 15:
                     output.write(line)
                     last_line = line
-                    multi_line += line
 
                 if line.startswith("%"):
                     output.write(line)
                     last_line = line
-                    multi_line = ""
+                    if multi_line:
+                        multi_line += line
+                    else:
+                        multi_line = ""
 
                 if line.startswith("*"):
+                    multi_line = ""
                     regx_result = interval_regx.search(line)
 
                     if not regx_result:
                         multi_line += line
+                        print "problem file: {}    line# {}".format(path, index)
                         continue
 
                     prev_interval[0] = curr_interval[0]
@@ -466,6 +497,11 @@ def update_cha(subject, diffs):
                     curr_interval[1] = int(interval[1])
 
                     entries = entry_regx.findall(multi_line + line)
+                    for entry in entries:
+                        if check_diff_and_cha_regx(current_diff, entry):
+                            old_entry = current_diff.old_cha_entry()
+                            new_entry = current_diff.cha_entry()
+                            line.replace(old_entry, new_entry)
 
                 if line.startswith("\t"):
                     regx_result = interval_regx.search(line)
@@ -485,11 +521,23 @@ def update_cha(subject, diffs):
 
                     entries = entry_regx.findall(multi_line + line)
 
+def check_diff_and_cha_regx(diff, cha_regx):
+    if diff.basic_level == cha_regx[0] and\
+       diff.utt_type == cha_regx[3] and\
+       diff.present == cha_regx[5]:
+        return True
+    return False
+
+def diff_to_cha_entry(diff):
+
+
 def correct_cha_filename(key, file):
     if file.endswith(".cha"):
-        if "newclan_merged" in file and key in file:
+        if "newclan_merged" in file and key in file\
+                and "bl_tidy" not in file:
             return True
-        if "final" in file and key in file:
+        if "final" in file and key in file\
+                and "bl_tidy" not in file:
             return True
     return False
 

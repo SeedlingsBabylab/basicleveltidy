@@ -468,17 +468,13 @@ def update_cha(subject, diffs):
                 if line.startswith("%"):
                     output.write(line)
                     last_line = line
-                    if multi_line:
-                        multi_line += line
-                    else:
-                        multi_line = ""
+
 
                 if line.startswith("*"):
                     multi_line = ""
                     regx_result = interval_regx.search(line)
 
                     if not regx_result:
-                        multi_line += line
                         print "problem file: {}    line# {}".format(path, index)
                         continue
 
@@ -487,14 +483,14 @@ def update_cha(subject, diffs):
 
                     # set the new curr_interval
                     interval_str = regx_result.group().replace("\025", "")
-                    if interval_str != current_diff.time:
-                        output.write(line)
-                        last_line = line
-                        multi_line = ""
-                        continue
                     interval = interval_str.split("_")
                     curr_interval[0] = int(interval[0])
                     curr_interval[1] = int(interval[1])
+
+                    if interval_str != current_diff.time:
+                        output.write(line)
+                        last_line = line
+                        continue
 
                     entries = entry_regx.findall(multi_line + line)
                     for entry in entries:
@@ -502,12 +498,13 @@ def update_cha(subject, diffs):
                             old_entry = current_diff.old_cha_entry()
                             new_entry = current_diff.cha_entry()
                             line.replace(old_entry, new_entry)
+                            if diff_queue:
+                                current_diff = diff_queue.popleft()
 
                 if line.startswith("\t"):
                     regx_result = interval_regx.search(line)
 
                     if not regx_result:
-                        multi_line += line
                         continue
 
                     prev_interval[0] = curr_interval[0]
@@ -518,8 +515,19 @@ def update_cha(subject, diffs):
                     interval = interval_str.split("_")
                     curr_interval[0] = int(interval[0])
                     curr_interval[1] = int(interval[1])
-
+                    if interval_str != current_diff.time:
+                        output.write(line)
+                        last_line = line
+                        continue
+                    
                     entries = entry_regx.findall(multi_line + line)
+                    for entry in entries:
+                        if check_diff_and_cha_regx(current_diff, entry):
+                            old_entry = current_diff.old_cha_entry()
+                            new_entry = current_diff.cha_entry()
+                            line.replace(old_entry, new_entry)
+                            if diff_queue:
+                                current_diff = diff_queue.popleft()
 
 def check_diff_and_cha_regx(diff, cha_regx):
     if diff.basic_level == cha_regx[0] and\

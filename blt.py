@@ -289,14 +289,14 @@ def register_edit_paths():
                 key = split_root[-3]
                 for file in files:
                     if correct_audio_csv_filename(key, file):
-                        tidy_paths[key].audio_csv = os.path.join(root, file)
+                        tidy_paths[key].audio_csv = os.path.abspath(os.path.join(root, file))
 
             if "Audio_Annotation" in root:
                 split_root = splitall(root)
                 key = split_root[-3]
                 for file in files:
                     if correct_cha_filename(key, file):
-                        tidy_paths[key].audio_cha = os.path.join(root, file)
+                        tidy_paths[key].audio_cha = os.path.abspath(os.path.join(root, file))
 
         elif any(x in root for x in video_keys):
             if "Video_Analysis" in root:
@@ -304,14 +304,14 @@ def register_edit_paths():
                 key = split_root[-3]
                 for file in files:
                     if correct_video_csv_filename(key, file):
-                        tidy_paths[key].video_csv = os.path.join(root, file)
+                        tidy_paths[key].video_csv = os.path.abspath(os.path.join(root, file))
 
             if "Video_Annotation" in root:
                 split_root = splitall(root)
                 key = split_root[-3]
                 for file in files:
                     if "final" in file and file.endswith(".opf"):
-                        tidy_paths[key].video_opf = os.path.join(root, file)
+                        tidy_paths[key].video_opf = os.path.abspath(os.path.join(root, file))
 
 def tidy_all_audio_changes():
     for subject, diffs in audio_diffs.iteritems():
@@ -452,12 +452,6 @@ def update_cha(subject, diffs):
     diff_queue = deque(diffs)
     current_diff = diff_queue.popleft()
 
-    last_line = ""
-    multi_line = ""
-
-    prev_interval = [0, 0]
-    curr_interval = [0, 0]
-
     with open(path, "rU") as input:
         with open(new_path, "wb") as output:
             for index, line in enumerate(input):
@@ -476,9 +470,6 @@ def update_cha(subject, diffs):
                     output.write(line)
                     continue
 
-                prev_interval[0] = curr_interval[0]
-                prev_interval[1] = curr_interval[1]
-
                 # set the new curr_interval
                 interval_str = regx_result.group().replace("\025", "")
                 interval = interval_str.split("_")
@@ -487,7 +478,7 @@ def update_cha(subject, diffs):
                     output.write(line)
                     continue
 
-                entries = entry_regx.findall(multi_line + line)
+                entries = entry_regx.findall(line)
                 for entry in entries:
                     if check_diff_and_cha_regx(current_diff, entry):
                         old_entry = current_diff.old_cha_entry()
@@ -496,7 +487,6 @@ def update_cha(subject, diffs):
                         if diff_queue:
                             current_diff = diff_queue.popleft()
                 output.write(line)
-
 
 def check_diff_and_cha_regx(diff, cha_regx):
     if diff.basic_level == cha_regx[0] and\

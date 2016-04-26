@@ -267,11 +267,11 @@ def chunk_audio_problem_files():
     return audio_diffs
 
 def chunk_video_problem_files():
-    for problem in audio_problem_files:
-        if problem[0][0:5] in audio_diffs:
-            video_diffs[problem[0][0:5]].append(problem)
+    for problem in video_problem_files:
+        if problem.id[0:5] in video_diffs:
+            video_diffs[problem.id[0:5]].append(problem)
         else:
-            video_diffs[problem[0][0:5]] = [problem]
+            video_diffs[problem.id[0:5]] = [problem]
     return video_diffs
 
 def register_edit_paths():
@@ -310,7 +310,7 @@ def register_edit_paths():
                 split_root = splitall(root)
                 key = split_root[-3]
                 for file in files:
-                    if "check" in file and file.endswith(".opf"):
+                    if "final" in file and file.endswith(".opf"):
                         tidy_paths[key].video_opf = os.path.join(root, file)
 
 def tidy_all_audio_changes():
@@ -556,15 +556,23 @@ def splitall(path):
 
 def output_opf_diffs_file(diffs):
 
+    header = ["id", "ordinal", "onset", "offset",
+              "object", "utt_type", "present", "speaker",
+              "basic_level", "object_edit","utt_type_edit",
+              "obj_present_edit","speaker_edit", "basic_level_edit"]
+
     with open("opf_diffs.csv", "wb") as output:
-        writer = csv.writer(output)
+        writer = csv\
+            .writer(output)
+        writer.writerow(header)
+
         for diff in diffs:
             if diff.needs_full_update:
                 writer.writerow(diff.csv_row())
 
     print "\n================================================"
     print "#                                              #"
-    print "#  A file: \"opf_diffs.csv\" has been created. #\n" \
+    print "#  A file: \"opf_diffs.csv\" has been created.   #\n" \
           "#  This file needs to be passed through a      #\n" \
           "#  datavyu script to update the opf files.     #"
     print "#                                              #"
@@ -581,7 +589,7 @@ if __name__ == "__main__":
         tidy_all_audio_changes()
 
     if "video" in bl_edit_file:
-        read_audio_csv()
+        read_video_csv()
         chunks = chunk_video_problem_files()
         register_edit_paths()
         tidy_all_video_changes()

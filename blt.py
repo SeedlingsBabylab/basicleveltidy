@@ -463,71 +463,40 @@ def update_cha(subject, diffs):
             for index, line in enumerate(input):
                 if line.startswith("@") or index < 15:
                     output.write(line)
-                    last_line = line
+                    continue
 
                 if line.startswith("%"):
                     output.write(line)
-                    last_line = line
+                    continue
 
+                regx_result = interval_regx.search(line)
 
-                if line.startswith("*"):
-                    multi_line = ""
-                    regx_result = interval_regx.search(line)
+                if not regx_result:
+                    #print "problem file: {}    line# {}".format(path, index)
+                    output.write(line)
+                    continue
 
-                    if not regx_result:
-                        print "problem file: {}    line# {}".format(path, index)
-                        continue
+                prev_interval[0] = curr_interval[0]
+                prev_interval[1] = curr_interval[1]
 
-                    prev_interval[0] = curr_interval[0]
-                    prev_interval[1] = curr_interval[1]
+                # set the new curr_interval
+                interval_str = regx_result.group().replace("\025", "")
+                interval = interval_str.split("_")
 
-                    # set the new curr_interval
-                    interval_str = regx_result.group().replace("\025", "")
-                    interval = interval_str.split("_")
-                    curr_interval[0] = int(interval[0])
-                    curr_interval[1] = int(interval[1])
+                if interval_str != current_diff.time:
+                    output.write(line)
+                    continue
 
-                    if interval_str != current_diff.time:
-                        output.write(line)
-                        last_line = line
-                        continue
+                entries = entry_regx.findall(multi_line + line)
+                for entry in entries:
+                    if check_diff_and_cha_regx(current_diff, entry):
+                        old_entry = current_diff.old_cha_entry()
+                        new_entry = current_diff.new_cha_entry()
+                        line = line.replace(old_entry, new_entry)
+                        if diff_queue:
+                            current_diff = diff_queue.popleft()
+                output.write(line)
 
-                    entries = entry_regx.findall(multi_line + line)
-                    for entry in entries:
-                        if check_diff_and_cha_regx(current_diff, entry):
-                            old_entry = current_diff.old_cha_entry()
-                            new_entry = current_diff.cha_entry()
-                            line.replace(old_entry, new_entry)
-                            if diff_queue:
-                                current_diff = diff_queue.popleft()
-
-                if line.startswith("\t"):
-                    regx_result = interval_regx.search(line)
-
-                    if not regx_result:
-                        continue
-
-                    prev_interval[0] = curr_interval[0]
-                    prev_interval[1] = curr_interval[1]
-
-                    # set the new curr_interval
-                    interval_str = regx_result.group().replace("\025", "")
-                    interval = interval_str.split("_")
-                    curr_interval[0] = int(interval[0])
-                    curr_interval[1] = int(interval[1])
-                    if interval_str != current_diff.time:
-                        output.write(line)
-                        last_line = line
-                        continue
-                    
-                    entries = entry_regx.findall(multi_line + line)
-                    for entry in entries:
-                        if check_diff_and_cha_regx(current_diff, entry):
-                            old_entry = current_diff.old_cha_entry()
-                            new_entry = current_diff.cha_entry()
-                            line.replace(old_entry, new_entry)
-                            if diff_queue:
-                                current_diff = diff_queue.popleft()
 
 def check_diff_and_cha_regx(diff, cha_regx):
     if diff.basic_level == cha_regx[0] and\

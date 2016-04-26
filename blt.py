@@ -556,7 +556,7 @@ def splitall(path):
 
 def output_opf_diffs_file(diffs):
 
-    header = ["id", "ordinal", "onset", "offset",
+    header = ["opf_path", "ordinal", "onset", "offset",
               "object", "utt_type", "present", "speaker",
               "basic_level", "object_edit","utt_type_edit",
               "obj_present_edit","speaker_edit", "basic_level_edit"]
@@ -567,8 +567,9 @@ def output_opf_diffs_file(diffs):
         writer.writerow(header)
 
         for diff in diffs:
+            opf_path = tidy_paths[diff.id[0:5]].video_opf
             if diff.needs_full_update:
-                writer.writerow(diff.csv_row())
+                writer.writerow([opf_path] + diff.csv_row()[1:])
 
     print "\n================================================"
     print "#                                              #"

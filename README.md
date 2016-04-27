@@ -20,7 +20,7 @@ id                                | tier  | object    | utterance_type | object_
 "01_10_coderAR_audio_checkSM.csv" | *MAN  | alligator | d              | n              |  FAT    | 4989390_4990400 |   alligator      
 
 
-The csv that needs to be fed into basicleveltidy needs to have extra columns where you put your edits. By running the 
+The csv that needs to be fed into basicleveltidy needs to have extra columns where you put your edits. By running the
 create_edits_csv.py script, it will create a new csv based on the original concatenated one with those extra columns.
 
 extra columns:
@@ -28,8 +28,8 @@ extra columns:
 object_edit | utt_type_edit | obj_present_edit | speaker_edit | basic_level_edit
 ----------- | ------------- | ---------------- | ------------ | ----------------|
             |      s        |                  |              |       gator
-            
-            
+
+
 ```
 $: python create_edits_csv.py original_aggregate_basic_level.csv
 ```
@@ -45,3 +45,17 @@ $: python blt.py output_from_create_edits_csv.csv
 ```
 
 
+If the csv you pass in is for video files, you might get this message after running blt.py:
+
+```
+================================================
+#                                              #
+#  A file: "opf_diffs.csv" has been created.   #
+#  This file needs to be passed through a      #
+#  datavyu script to update the opf files.     #
+#                                              #
+================================================
+```
+
+This opf_diffs.csv file needs to be fed into a Datavyu script (blt_opf_update.rb). You run the datavyu script like any other, except you 
+need to specify the path to the opf_diffs.csv file within the script itself. for [example](https://github.com/SeedlingsBabylab/datavyu_scripts/blob/master/blt_opf_update.rb#L12)

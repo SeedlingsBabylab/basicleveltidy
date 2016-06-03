@@ -44,6 +44,7 @@ This is the main script that does the Subject_Files directory traversal and file
 $: python blt.py output_from_create_edits_csv.csv
 ```
 
+It will create a new updated file, while keeping the original in tact but adding "_untidy" to the original's file name.
 
 If the csv you pass in is for video files, you might get this message after running blt.py:
 

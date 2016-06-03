@@ -338,7 +338,10 @@ def tidy_all_video_changes():
 
 def fix_original_audio_csv(subject, diffs):
     path = tidy_paths[subject].audio_csv
+    untidy_path = path.replace(".csv", "_untidy.csv")
     new_path = path.replace(".csv", "_bl_tidy.csv")
+    # rename old file to _untidy
+    os.rename(path, untidy_path)
     basic_levels = audio_csv_to_objects(path)
 
     diff_deque = deque(diffs)
@@ -364,7 +367,10 @@ def fix_original_audio_csv(subject, diffs):
 
 def fix_original_video_csv(subject, diffs):
     path = tidy_paths[subject].video_csv
+    untidy_path = path.replace(".csv", "_untidy.csv")
     new_path = path.replace(".csv", "_bl_tidy.csv")
+    # rename old file to _untidy
+    os.rename(path, untidy_path)
     basic_levels = video_csv_to_objects(path)
 
     diff_deque = deque(diffs)
@@ -444,7 +450,10 @@ def video_csv_to_objects(path):
 def update_cha(subject, diffs):
     path = tidy_paths[subject].audio_cha
     new_path = path.replace(".cha", "_bl_tidy.cha")
+    untidy_path = path.replace(".cha", "_untidy.cha")
 
+    # rename original cha to _untidy
+    os.rename(path, untidy_path)
     interval_regx = re.compile("(\025\d+_\d+)")
 
     entry_regx = re.compile(re1+re2+re3+re4+re5+re6+re7+re8,re.IGNORECASE|re.DOTALL)
